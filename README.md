@@ -12,7 +12,38 @@ Otherwise, you can clone the `biogl` repo and source it locally (to run from any
 
 ### Usage info
 
-# __notify__
+```
+usage: notify [-h] [-e EMAIL] [-o] [--add_email] [--view_config] [--ID ID]
+              [-d]
+              [external commands [external commands ...]]
+
+Automatically sends an email to the specified address upon completion of the
+specified command. Useful primarily for very long-running processes. In many
+cases, the command being run (including the name of the other program) will
+need to be placed in quotes. If no email address is provided with the -e flag,
+a prompt will be displayed based upon the configuration file.
+
+positional arguments:
+  external commands     External commands to run, including external program
+                        call. NOTE: for complex commands (e.g. awk + $args),
+                        wrapping the entire command in double or triple quotes
+                        may be necessary (default: None)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -e EMAIL, --email EMAIL
+                        the email address to notify (default: None)
+  -o, --send_output     send any stdout/stderr messages in the body of the
+                        email (limited to 5 MB) (default: False)
+  --add_email           add or change an email address in the config file
+                        (default: False)
+  --view_config         view the contents of the configuration file (default:
+                        False)
+  --ID ID               additional string to include in email subject
+                        (default: None)
+  -d, --dry_run         print command that would be executed and exit without
+                        running (default: False)
+```
 
 ## __[tl;dr]__
 `notify` will run any command, wait for it to complete, and send an email to the user once the command is finished. Particularly useful for long-running programs when run in a `screen`
@@ -34,14 +65,12 @@ which results in the following email send to 'user@email.com':
 
 subject: 
 ```
-[2017.07.05-13.50][trypsin]: 'samtools view -b tfoetus.stringtie.sam | samtools sort -o tfoetus.stringtie.sorted.bam' completed
+[2017.07.05-13.50][server]: 'samtools view -b tfoetus.stringtie.sam | samtools sort -o tfoetus.stringtie.sorted.bam' completed
 ```
 body:
 ```
 Command-line arguments: samtools view -b tfoetus.stringtie.sam | samtools sort -o tfoetus.stringtie.sorted.bam
 Total runtime: 2.704 hours
 Return value: 0
-Location: /mnt/trypsin_helix/glarue/u12/protists/tritrichomonas_foetus
+Location: /mnt/server_drive/glarue/u12/protists/tritrichomonas_foetus
 ```
-
-## __[background]__
