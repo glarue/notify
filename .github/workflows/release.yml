@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            asset_name: notify-linux-x86_64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            asset_name: notify-linux-x86_64-musl
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            asset_name: notify-macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            asset_name: notify-macos-aarch64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            asset_name: notify-windows-x86_64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install musl tools (Linux musl only)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Prepare binary (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cd target/${{ matrix.target }}/release
+          strip notify || true
+          chmod +x notify
+          tar czf ${{ matrix.asset_name }}.tar.gz notify
+          mv ${{ matrix.asset_name }}.tar.gz $GITHUB_WORKSPACE/
+
+      - name: Prepare binary (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          cd target/${{ matrix.target }}/release
+          7z a ${{ matrix.asset_name }}.zip notify.exe
+          mv ${{ matrix.asset_name }}.zip $GITHUB_WORKSPACE/
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ${{ matrix.asset_name }}.tar.gz
+            ${{ matrix.asset_name }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
