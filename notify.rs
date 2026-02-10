@@ -378,13 +378,23 @@ fn choose_email_interactive(cfg: &mut Config, path: &Path) -> Result<String> {
 }
 
 fn format_duration(d: Duration) -> String {
-    let secs = d.as_secs();
-    let days = secs / 86_400;
-    let hrs = (secs % 86_400) / 3600;
-    let mins = (secs % 3600) / 60;
-    let s = secs % 60;
+    let total_secs = d.as_secs();
+    let millis = d.subsec_millis();
 
-    if days > 0 {
+    // For very short durations (< 1 second), show milliseconds
+    if total_secs == 0 {
+        return format!("{}ms", millis);
+    }
+
+    let days = total_secs / 86_400;
+    let hrs = (total_secs % 86_400) / 3600;
+    let mins = (total_secs % 3600) / 60;
+    let s = total_secs % 60;
+
+    // For durations under 1 minute, include milliseconds
+    if days == 0 && hrs == 0 && mins == 0 {
+        format!("{s}.{millis:03}s")
+    } else if days > 0 {
         format!("{days}d {hrs:02}:{mins:02}:{s:02}")
     } else {
         format!("{hrs:02}:{mins:02}:{s:02}")
