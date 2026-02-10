@@ -56,7 +56,14 @@ tar xzf notify-macos-aarch64.tar.gz
 sudo mv notify /usr/local/bin/
 ```
 
-**Linux:**
+**Linux (recommended - works on any distribution):**
+```bash
+curl -LO https://github.com/glarue/notify/releases/latest/download/notify-linux-x86_64-musl.tar.gz
+tar xzf notify-linux-x86_64-musl.tar.gz
+sudo mv notify /usr/local/bin/
+```
+
+**Linux (glibc - requires glibc 2.39+):**
 ```bash
 curl -LO https://github.com/glarue/notify/releases/latest/download/notify-linux-x86_64.tar.gz
 tar xzf notify-linux-x86_64.tar.gz

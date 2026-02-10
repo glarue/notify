@@ -23,14 +23,18 @@ esac
 case "$OS" in
     darwin)
         PLATFORM="macos"
+        VARIANT=""
         EXT="tar.gz"
         ;;
     linux)
         PLATFORM="linux"
+        # Use musl build for maximum compatibility (statically linked, no glibc dependency)
+        VARIANT="-musl"
         EXT="tar.gz"
         ;;
     mingw*|msys*|cygwin*)
         PLATFORM="windows"
+        VARIANT=""
         EXT="zip"
         ;;
     *)
@@ -39,7 +43,7 @@ case "$OS" in
         ;;
 esac
 
-ASSET_NAME="notify-${PLATFORM}-${ARCH}"
+ASSET_NAME="notify-${PLATFORM}-${ARCH}${VARIANT}"
 DOWNLOAD_URL="https://github.com/glarue/notify/releases/latest/download/${ASSET_NAME}.${EXT}"
 
 echo "Downloading notify for ${PLATFORM}-${ARCH}..."
