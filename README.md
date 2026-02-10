@@ -16,7 +16,29 @@ A Rust rewrite of a Python utility that wraps command execution and sends email 
 
 ## Installation
 
-### From GitHub Releases (Recommended)
+### Quick Install (Recommended)
+
+Run the install script (auto-detects your platform):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/glarue/notify/main/install.sh | bash
+```
+
+Or download and inspect first:
+```bash
+curl -fsSL https://raw.githubusercontent.com/glarue/notify/main/install.sh -o install.sh
+bash install.sh
+```
+
+### Using Cargo
+
+If you have Rust installed:
+
+```bash
+cargo install --git https://github.com/glarue/notify
+```
+
+### Manual Installation from GitHub Releases
 
 Download the latest binary for your platform from the [releases page](https://github.com/glarue/notify/releases):
 
@@ -44,7 +66,7 @@ sudo mv notify /usr/local/bin/
 **Windows:**
 Download `notify-windows-x86_64.zip` from releases and extract to a directory in your PATH.
 
-### From Source
+### Build from Source
 
 Requires Rust 1.70+:
 ```bash
