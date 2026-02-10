@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Graham <graham@example.com>"]
 description = "Run shell commands and email completion status with runtime and output"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/yourusername/notify"
+repository = "https://github.com/glarue/notify"
 keywords = ["email", "notification", "cli", "command", "smtp"]
 categories = ["command-line-utilities"]
 
