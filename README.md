@@ -1,76 +1,203 @@
-### Dependencies
+# notify
 
-This script needs the [biogl](https://github.com/glarue/biogl) module to function properly. If you use (or can get) `pip`, you can simply do
+Run shell commands and email completion status with runtime and output.
 
-```python3 -m pip install biogl```
+A Rust rewrite of a Python utility that wraps command execution and sends email notifications on completion, including runtime, exit status, and optionally the command output.
 
-to add the package to a location reachable by your Python installation. 
+## Features
 
-Otherwise, you can clone the `biogl` repo and source it locally (to run from anywhere, you'll need to add it to your PYTHONPATH environment variable, a process that varies by OS):
+- Email notifications on command completion (success or failure)
+- Includes command runtime, hostname, and exit status
+- Optional output capture in email body (size-limited to 500KB)
+- Interactive configuration for SMTP server and email addresses
+- Secure password handling via environment variables
+- TOML-based configuration with XDG standard directory support
+- Multiple user email addresses with interactive selection
 
-```git clone https://github.com/glarue/biogl.git```
+## Installation
 
-### Usage info
+### From GitHub Releases (Recommended)
 
-```
-usage: notify [-h] [-e EMAIL] [-o] [--add_email] [--view_config] [--ID ID]
-              [-d]
-              [external commands [external commands ...]]
+Download the latest binary for your platform from the [releases page](https://github.com/glarue/notify/releases):
 
-Automatically sends an email to the specified address upon completion of the
-specified command. Useful primarily for very long-running processes. In many
-cases, the command being run (including the name of the other program) will
-need to be placed in quotes. If no email address is provided with the -e flag,
-a prompt will be displayed based upon the configuration file.
-
-positional arguments:
-  external commands     External commands to run, including external program
-                        call. NOTE: for complex commands (e.g. awk + $args),
-                        wrapping the entire command in double or triple quotes
-                        may be necessary (default: None)
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -e EMAIL, --email EMAIL
-                        the email address to notify (default: None)
-  -o, --send_output     send any stdout/stderr messages in the body of the
-                        email (limited to 5 MB) (default: False)
-  --add_email           add or change an email address in the config file
-                        (default: False)
-  --view_config         view the contents of the configuration file (default:
-                        False)
-  --ID ID               additional string to include in email subject
-                        (default: None)
-  -d, --dry_run         print command that would be executed and exit without
-                        running (default: False)
+**macOS (Intel):**
+```bash
+curl -LO https://github.com/glarue/notify/releases/latest/download/notify-macos-x86_64.tar.gz
+tar xzf notify-macos-x86_64.tar.gz
+sudo mv notify /usr/local/bin/
 ```
 
-## __[tl;dr]__
-`notify` will run any command, wait for it to complete, and send an email to the user once the command is finished. Particularly useful for long-running programs when run in a `screen`
-
-## __[details]__
-When running very long programs, it's nice to not have to think to check on them until they're finished. Also, having an email history of commands run can be a useful reference for future work. `notify` provides an accessible mechanism for keeping track of long-running processes and produces a de facto archive of previous commands.
-
-`notify` can store information about the email server in a configuration file - this will be presented as an option to the user automatically. In addition, it can store information about users, to avoid the user having to enter their email address every time the script is run (though this can be avoided in a variety of other ways, e.g. through aliasing). User information may also be specified on a per-run basis (see usage info).
-
-## __[example usage]__
-One requirement of `notify` is that the command being run must be wrapped in quotes – while not required for all commands, failing to use quotes risks breaking the function of the script.
-
-Here is an example using `samtools`,
-
+**macOS (Apple Silicon):**
+```bash
+curl -LO https://github.com/glarue/notify/releases/latest/download/notify-macos-aarch64.tar.gz
+tar xzf notify-macos-aarch64.tar.gz
+sudo mv notify /usr/local/bin/
 ```
-$ notify -e user@email.com "samtools view -b tfoetus.stringtie.sam | samtools sort -o tfoetus.stringtie.sorted.bam"
-```
-which results in the following email send to 'user@email.com':
 
-subject: 
+**Linux:**
+```bash
+curl -LO https://github.com/glarue/notify/releases/latest/download/notify-linux-x86_64.tar.gz
+tar xzf notify-linux-x86_64.tar.gz
+sudo mv notify /usr/local/bin/
 ```
-[2017.07.05-13.50][server]: 'samtools view -b tfoetus.stringtie.sam | samtools sort -o tfoetus.stringtie.sorted.bam' completed
+
+**Windows:**
+Download `notify-windows-x86_64.zip` from releases and extract to a directory in your PATH.
+
+### From Source
+
+Requires Rust 1.70+:
+```bash
+git clone https://github.com/glarue/notify
+cd notify
+cargo install --path .
 ```
-body:
+
+## Configuration
+
+### First-time setup
+
+Run the interactive server configuration:
+```bash
+notify --setup-server
 ```
-Command-line arguments: samtools view -b tfoetus.stringtie.sam | samtools sort -o tfoetus.stringtie.sorted.bam
-Total runtime: 2.704 hours
-Return value: 0
-Location: /mnt/server_drive/glarue/u12/protists/tritrichomonas_foetus
+
+This will prompt you for:
+- SMTP server address (e.g., `smtp.gmail.com`)
+- SMTP port (465 for SSL, 587 for STARTTLS)
+- From email address
+- Password (recommended: use environment variable)
+
+Configuration is stored at:
+- **macOS**: `~/Library/Application Support/notify/config.toml`
+- **Linux**: `~/.config/notify/config.toml`
+- **Windows**: `%APPDATA%\notify\config.toml`
+
+### Example config
+
+```toml
+[server]
+server = "smtp.gmail.com"
+port = 587
+from_address = "your-email@gmail.com"
+password_env = "NOTIFY_PASSWORD"
+
+[[users]]
+name = "Me"
+email = "my-email@example.com"
+
+[[users]]
+name = "Team"
+email = "team@example.com"
 ```
+
+### Set password via environment variable (recommended)
+
+```bash
+export NOTIFY_PASSWORD='your-app-password'
+```
+
+Add this to your `.zshrc` or `.bashrc` to persist across sessions.
+
+### Add email addresses
+
+```bash
+notify --add-email
+```
+
+## Usage
+
+### Basic usage
+
+Wrap any command with `notify` (two syntaxes supported):
+
+**Using `--` separator (recommended - supports tab-completion):**
+```bash
+notify -o -- your-command arg1 arg2
+notify -e user@example.com -- long-running-task
+```
+
+**Using quoted string (legacy Python-style):**
+```bash
+notify "your-command arg1 arg2" -o
+notify "long-running-task" -e user@example.com
+```
+
+### Specify recipient email
+
+```bash
+# With --
+notify -e user@example.com -- pytest
+
+# With quotes
+notify "pytest" -e user@example.com
+```
+
+### Include command output in email
+
+```bash
+# With --
+notify -o -- cargo build --release
+
+# With quotes
+notify "cargo build --release" -o
+```
+
+### Add identifier to subject line
+
+```bash
+notify --ID "Nightly Build" -o -- ./run-tests.sh
+# or
+notify "./run-tests.sh" --ID "Nightly Build" -o
+```
+
+### View current config
+
+```bash
+notify --view-config
+```
+
+### Dry run (print command without executing)
+
+```bash
+notify -d -- echo "test"
+# or
+notify "echo test" -d
+```
+
+## Common Use Cases
+
+**Long-running builds:**
+```bash
+notify --ID "Production Build" -o -- cargo build --release
+```
+
+**Scheduled tasks:**
+```bash
+0 2 * * * /usr/local/bin/notify -e admin@example.com -- /path/to/backup.sh
+```
+
+**Test suites:**
+```bash
+notify -o -- python -m pytest tests/
+```
+
+**Data processing:**
+```bash
+notify --ID "ETL Pipeline" -e team@example.com -- ./process-data.sh
+```
+
+## Gmail Setup
+
+For Gmail, you'll need an [App Password](https://support.google.com/accounts/answer/185833):
+1. Enable 2-factor authentication on your Google account
+2. Generate an app password at https://myaccount.google.com/apppasswords
+3. Use the app password (not your regular password) in the config
+
+## License
+
+Licensed under either of:
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+
+at your option.
